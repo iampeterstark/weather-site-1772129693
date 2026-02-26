@@ -19,30 +19,43 @@
             try {
                 const resp = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
                 const data = await resp.json();
-                // 即時天氣
-                const now = data.rhrread[0];
-                const nowDiv = document.getElementById('now');
-                nowDiv.innerHTML = `
-                    <p>更新時間：${now.updateTime}</p>
-                    <p>天氣現象：${now.weather}</p>
-                    <p>溫度：${now.temp}°C (感覺溫度 ${now.feelTemp}°C)</p>
-                    <p>相對濕度：${now.rh}%</p>
-                    <p>風向/風力：${now.windDir}/${now.windSpeed} km/h</p>
-                `;
-                // 7 天預報
-                const forecast = data.warning || [];
-                const forecastDiv = document.getElementById('forecast');
-                if(data.warning && data.warning.length>0){
-                    let html='';
-                    data.warning.forEach(w=>{
-                        html+=`<p>${w.issueTime} - ${w.message}</p>`;
+                // 更新時間
+                const updateDiv = document.getElementById('update');
+                if(updateDiv){
+                    updateDiv.textContent = `資料更新時間：${data.updateTime || ''}`;
+                }
+                // 氣溫表格（全部）
+                const tempDiv = document.getElementById('temperature');
+                if(data.temperature && data.temperature.data && tempDiv){
+                    let html='<table class="forecast-table"><tr><th>測站</th><th>氣溫 (°C)</th></tr>';
+                    data.temperature.data.forEach(t=>{
+                        html+=`<tr><td>${t.place}</td><td>${t.value}</td></tr>`;
                     });
-                    forecastDiv.innerHTML = html;
-                } else {
-                    forecastDiv.innerHTML = '<p>目前沒有天氣警示。</p>';
+                    html+='</table>';
+                    tempDiv.innerHTML = html;
+                }
+                // 濕度表格（全部）
+                const humDiv = document.getElementById('humidity');
+                if(data.humidity && data.humidity.data && humDiv){
+                    let html='<table class="forecast-table"><tr><th>測站</th><th>相對濕度 (%)</th></tr>';
+                    data.humidity.data.forEach(h=>{
+                        html+=`<tr><td>${h.place}</td><td>${h.value}</td></tr>`;
+                    });
+                    html+='</table>';
+                    humDiv.innerHTML = html;
+                }
+                // 降雨表格（全部）
+                const rainDiv = document.getElementById('rainfall');
+                if(data.rainfall && data.rainfall.data && rainDiv){
+                    let html='<table class="forecast-table"><tr><th>地區</th><th>降雨量 (mm)</th></tr>';
+                    data.rainfall.data.forEach(r=>{
+                        html+=`<tr><td>${r.place}</td><td>${r.max}</td></tr>`;
+                    });
+                    html+='</table>';
+                    rainDiv.innerHTML = html;
                 }
             } catch(e){
-                document.getElementById('now').innerHTML = '<p>載入失敗，請稍後再試。</p>';
+                document.body.innerHTML = '<p>資料載入失敗，請稍後再試。</p>';
                 console.error(e);
             }
         }
@@ -52,14 +65,10 @@
 <body>
     <h1>📍 香港天氣資訊</h1>
     <div id="content">
-        <div class="section" id="now">
-            <h2>即時天氣</h2>
-            <p>載入中...</p>
-        </div>
-        <div class="section" id="forecast">
-            <h2>天氣警示</h2>
-            <p>載入中...</p>
-        </div>
+        <div class="section" id="update"><h2>資料更新時間</h2><p>載入中...</p></div>
+        <div class="section" id="temperature"><h2>氣溫</h2><p>載入中...</p></div>
+        <div class="section" id="humidity"><h2>相對濕度</h2><p>載入中...</p></div>
+        <div class="section" id="rainfall"><h2>降雨量</h2><p>載入中...</p></div>
     </div>
     <p style="text-align:center;margin-top:2rem;">
         <a href="https://data.weather.gov.hk/" target="_blank">資料來源：香港天文台</a>
