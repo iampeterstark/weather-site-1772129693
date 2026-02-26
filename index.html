@@ -6,16 +6,63 @@
     <style>
         body {font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;margin:2rem;background:#f0f8ff;}
         h1 {text-align:center;}
-        .weather {max-width:800px;margin:auto;}
-        iframe {border:none;width:100%;height:260px;}
-        .forecast {display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;margin-top:2rem;}
-        .day {background:#fff;padding:1rem;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:150px;text-align:center;}
+        #content {max-width:800px;margin:auto;}
+        .section {margin-bottom:2rem;}
+        .section h2 {margin-bottom:0.5rem;}
+        .weather-data {font-size:1.2rem; line-height:1.5;}
+        .forecast-table {width:100%;border-collapse:collapse;}
+        .forecast-table th, .forecast-table td {border:1px solid #ddd;padding:0.5rem;text-align:center;}
+        .forecast-table th {background:#eee;}
     </style>
+    <script>
+        async function loadWeather(){
+            try {
+                const resp = await fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=rhrread&lang=tc');
+                const data = await resp.json();
+                // 即時天氣
+                const now = data.rhrread[0];
+                const nowDiv = document.getElementById('now');
+                nowDiv.innerHTML = `
+                    <p>更新時間：${now.updateTime}</p>
+                    <p>天氣現象：${now.weather}</p>
+                    <p>溫度：${now.temp}°C (感覺溫度 ${now.feelTemp}°C)</p>
+                    <p>相對濕度：${now.rh}%</p>
+                    <p>風向/風力：${now.windDir}/${now.windSpeed} km/h</p>
+                `;
+                // 7 天預報
+                const forecast = data.warning || [];
+                const forecastDiv = document.getElementById('forecast');
+                if(data.warning && data.warning.length>0){
+                    let html='';
+                    data.warning.forEach(w=>{
+                        html+=`<p>${w.issueTime} - ${w.message}</p>`;
+                    });
+                    forecastDiv.innerHTML = html;
+                } else {
+                    forecastDiv.innerHTML = '<p>目前沒有天氣警示。</p>';
+                }
+            } catch(e){
+                document.getElementById('now').innerHTML = '<p>載入失敗，請稍後再試。</p>';
+                console.error(e);
+            }
+        }
+        window.addEventListener('load',loadWeather);
+    </script>
 </head>
 <body>
-    <h1>📍 天氣資訊</h1>
-    <div class="weather"><iframe src="https://wttr.in/?format=3"></iframe></div>
-    <div class="forecast"><iframe src="https://wttr.in/?0"></iframe></div>
-    <p style="text-align:center;margin-top:2rem;"><a href="https://wttr.in" target="_blank">資料來源：wttr.in</a></p>
+    <h1>📍 香港天氣資訊</h1>
+    <div id="content">
+        <div class="section" id="now">
+            <h2>即時天氣</h2>
+            <p>載入中...</p>
+        </div>
+        <div class="section" id="forecast">
+            <h2>天氣警示</h2>
+            <p>載入中...</p>
+        </div>
+    </div>
+    <p style="text-align:center;margin-top:2rem;">
+        <a href="https://data.weather.gov.hk/" target="_blank">資料來源：香港天文台</a>
+    </p>
 </body>
 </html>
